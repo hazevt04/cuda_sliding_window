@@ -110,6 +110,24 @@ std::unique_ptr<T> my_make_unique(Args&&... args) {
 // or unsigned integers, 0 < a,b <= (2^31)-1
 inline int difference_or_zero(int a, int b) { return ((a - b) & ~((a - b) >> 31)); }
 
+// Just in case there is no intrinsic
+// From Hacker's Delight
+int my_popcount(unsigned int x) {
+   x -= ((x >> 1) & 0x55555555);
+   x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+   x = (x + (x >> 4)) & 0x0F0F0F0F;
+   x += (x >> 8);
+   x += (x >> 16);    
+   return x & 0x0000003F;
+}
+
+inline bool is_power_of_two( int val ) {
+   return ( my_popcount(val) > 1 );  
+}
+
+inline bool is_power_of_two( unsigned int val ) {
+   return ( my_popcount(val) > 1 );  
+}
 
 #define MILLISECONDS_PER_SECOND (1000.0f)
 typedef std::chrono::steady_clock Steady_Clock;

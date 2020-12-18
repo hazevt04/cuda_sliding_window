@@ -43,8 +43,8 @@ set(SRCS
    "src/my_utils.cpp"
    "src/my_cufft_utils.cpp"
    "src/my_file_io_funcs.cpp"
-   "src/sliding_window_kernel.cu"
-   "src/SlidingWindow.cu"
+   "src/sliding_window_kernels.cu"
+   "src/SlidingWindowGPU.cu"
    "src/main.cpp"
    )
 
