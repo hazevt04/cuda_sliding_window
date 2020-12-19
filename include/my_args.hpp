@@ -31,6 +31,19 @@ mode_select_t decode_mode_select_string( std::string mode_select_string ) {
    }
 }
 
+std::string get_mode_select_string( mode_select_t mode_select ) const {
+   if ( mode_select == mode_select_t::Sinusoidal ) {
+      return "Sinusoidal";
+   } else if ( mode_select == mode_select_t::Random ) {
+      return "Random";
+   } else if ( mode_select == mode_select_t::Filebased ) {
+      return "Filebased";
+   } else {
+      return "Unknown";
+   }
+} // end of std::string get_mode_select_string( mode_select_t mode_select ) const
+
+
 typedef struct my_args_s {
    mode_select_t mode_select = default_mode_select;
    std::string filename = default_filename;

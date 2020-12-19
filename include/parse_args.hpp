@@ -42,7 +42,7 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
          
          switch (opt) {
             case 'm':
-               my_args.mode_select_string = optarg;
+               my_args.mode_select = decode_mode_select( optarg );
                break;
 
             case 't':

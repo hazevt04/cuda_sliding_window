@@ -21,9 +21,9 @@ public:
       const int new_window_size,
       const int new_threads_per_block,
       const int new_seed,
-      const std::string new_mode_select_string,
+      const mode_select_t new_mode_select,
       const std::string new_filename,
-      const new_debug 
+      const bool new_debug 
    );
    
    SlidingWindowGPU( 
@@ -33,17 +33,17 @@ public:
             my_args.window_size,
             my_args.threads_per_block,
             my_args.seed,
-            my_args.mode_select_string,
+            my_args.mode_select,
             my_args.filename,
             my_args.debug ) 
    {}
 
    void run();
    void cpu_run();
-   void gen_expected_window_sums() { cpu_run() };
+   void gen_expected_window_sums() { cpu_run(); };
 
    void print_results( const std::string& prefix = "Window Sums: " ) {
-      print_cufftComplexes( window_sums.data(), num_samples, prefix,  " ",  "\n" );
+      print_cufftComplexes( window_sums.data(), num_samples, prefix.c_str(),  " ",  "\n" );
    }
 
    ~SlidingWindowGPU();
@@ -71,10 +71,11 @@ private:
    int num_samples = default_num_samples;
    int adjusted_num_samples = default_adjusted_num_samples;
 
+   int seed = default_seed;
    int window_size = default_window_size;
 
    size_t num_sample_bytes = default_num_sample_bytes;
    size_t adjusted_num_sample_bytes = default_adjusted_num_sample_bytes;
    std::unique_ptr<cudaStream_t> stream_ptr;
 
-}
+};

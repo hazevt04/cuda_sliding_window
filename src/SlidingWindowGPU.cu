@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 
+#include "my_cufft_utils.hpp"
 #include "SlidingWindowGPU.cuh"
 
 SlidingWindowGPU::SlidingWindowGPU( 
@@ -7,14 +8,14 @@ SlidingWindowGPU::SlidingWindowGPU(
    const int new_window_size,
    const int new_threads_per_block,
    const int new_seed,
-   const std::string new_mode_select_string,
+   const mode_select_t new_mode_select,
    const std::string new_filename,
-   const new_debug ):
+   const bool new_debug ):
       num_samples( new_num_samples ),
       window_size( new_window_size ),
       threads_per_block( new_threads_per_block ),
       seed( new_seed ),
-      mode_select_string( new_mode_select_string ),
+      mode_select( new_mode_select ),
       filename( new_filename ),
       debug( new_debug ) {
 
@@ -67,9 +68,7 @@ SlidingWindowGPU::SlidingWindowGPU(
          exp_window_sums[index] = make_cuFloatComplex(0.f,0.f);
       }
 
-      dout << __func__ << "(): Mode Select String is " << mode_select_string << "\n";
-
-      mode_select = decode_mode_select_string( mode_select_string );
+      dout << __func__ << "(): Mode Select is " << get_mode_select_string( mode_select ) << "\n";
 
    } catch( std::exception& ex ) {
       throw std::runtime_error{
@@ -121,7 +120,7 @@ void SlidingWindowGPU::calc_exp_window_sums() {
       << exp_window_sums[0].x << ", " << exp_window_sums[0].y << " }\n"; 
 
    for( int index = 0; index < window_size; ++index ) {
-      exp_window_sums[0] = cuCaddf( exp_window_sums[0], exp_conj_sqrs[index] );
+      exp_window_sums[0] = cuCaddf( exp_window_sums[0], samples[index] );
    }
 
    dout << __func__ << "(): after initial summation, exp_window_sums[0] = { " 
@@ -175,7 +174,7 @@ void SlidingWindowGPU::run() {
 
       if ( debug ) {
          print_cufftComplexes( samples, num_samples, "Samples: ", " ", "\n" ); 
-         print_vals( exp_norms, num_samples, "Expected Window Sums: ", " ", "\n" ); 
+         print_vals( exp_window_sums, num_samples, "Expected Window Sums: ", " ", "\n" ); 
       }
       
       float gpu_milliseconds = 0.f;
