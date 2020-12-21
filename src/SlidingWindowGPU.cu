@@ -63,6 +63,9 @@ SlidingWindowGPU::SlidingWindowGPU(
       window_sums.reserve( adjusted_num_samples );
       window_sums.resize( adjusted_num_samples );
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
+      
+      samples.reserve( adjusted_num_samples );
+      samples.resize( adjusted_num_samples );
 
       try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_samples, samples.data(), 0 ) );
       try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_window_sums, window_sums.data(), 0 ) );
@@ -84,7 +87,6 @@ SlidingWindowGPU::SlidingWindowGPU(
 
 void SlidingWindowGPU::initialize_samples() {
    try {
-      samples.resize( adjusted_num_samples );
       std::fill( samples.begin(), samples.end(), make_cuFloatComplex(0.f,0.f) );
 
       if( mode_select == mode_select_t::Sinusoidal ) {
