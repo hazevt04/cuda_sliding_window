@@ -27,17 +27,43 @@ SlidingWindowGPU::SlidingWindowGPU(
       cudaError_t cerror = cudaSuccess;         
       try_cuda_func_throw( cerror, cudaGetDevice( &device_id ) );
 
+      cudaDeviceProp deviceProp;
+      try_cuda_func_throw( cerror, cudaGetDeviceProperties( &deviceProp, device_id ) );
+
+      size_t max_shared_mem_per_block = deviceProp.sharedMemPerBlock;
+      dout << __func__ << "(): Max shared memory per block is " <<  max_shared_mem_per_block << " bytes\n";
+
       stream_ptr = my_make_unique<cudaStream_t>();
       try_cudaStreamCreate( stream_ptr.get() );
       dout << __func__ << "(): after cudaStreamCreate()\n"; 
 
       dout << __func__ << "(): num_samples is " << num_samples << "\n";
+      dout << __func__ << "(): window_size is " << window_size << "\n";
+
+      size_t max_num_shared_samples_per_block = max_shared_mem_per_block/sizeof(cufftComplex);
+      dout << __func__ << "(): Max number of samples fitting in shared memory per block is " <<  max_num_shared_samples_per_block << "\n";
+      
+      size_t max_num_shared_windows = max_num_shared_samples_per_block/window_size;
+      dout << __func__ << "(): Max number of windows fitting in shared memory per block is " <<  max_num_shared_windows << "\n";
+      
+      if ( threads_per_block > max_num_shared_windows ) {
+         std::cout << "Threads per block, " << threads_per_block << " is more than the max that can fit in shared memory per block: "
+            << max_num_shared_windows << "\n";
+         threads_per_block = max_num_shared_windows;
+         std::cout << "Changing threads per block to max_num_shared_windows: " << threads_per_block << " so that the windows will fit into shared memory.\n\n"; 
+      }
+
+      dout << __func__ << "(): threads_per_block is " << threads_per_block << "\n";
 
       num_blocks = (num_samples + (threads_per_block-1))/threads_per_block;
       dout << __func__ << "(): num_blocks is " << num_blocks << "\n";
 
       adjusted_num_samples = threads_per_block * num_blocks;
       adjusted_num_sample_bytes = adjusted_num_samples * sizeof( cufftComplex );
+
+      num_shared_bytes = threads_per_block * window_size * sizeof( cufftComplex );
+      dout << __func__ << "(): number of shared bytes is " << num_shared_bytes << "\n";
+      
 
       num_windowed_samples = num_samples - window_size;
       dout << __func__ << "(): number of windowed samples is "
@@ -176,7 +202,6 @@ void SlidingWindowGPU::cpu_run() {
 void SlidingWindowGPU::run() {
    try {
       cudaError_t cerror = cudaSuccess;
-      int num_shared_bytes = 0;
 
       dout << __func__ << "(): num_samples is " << num_samples << "\n"; 
       dout << __func__ << "(): threads_per_block is " << threads_per_block << "\n"; 
@@ -196,7 +221,8 @@ void SlidingWindowGPU::run() {
       float gpu_milliseconds = 0.f;
       Time_Point start = Steady_Clock::now();
       
-      sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+      //sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+      sliding_window_sh_mem<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
          d_window_sums, 
          d_samples,
          window_size,

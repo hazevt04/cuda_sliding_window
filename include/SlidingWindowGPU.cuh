@@ -79,6 +79,8 @@ private:
 
    size_t num_sample_bytes = default_num_sample_bytes;
    size_t adjusted_num_sample_bytes = default_adjusted_num_sample_bytes;
+
+   size_t num_shared_bytes = default_num_shared_bytes;
    std::unique_ptr<cudaStream_t> stream_ptr;
 
 };

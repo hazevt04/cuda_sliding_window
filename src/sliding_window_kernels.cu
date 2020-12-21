@@ -37,24 +37,23 @@ __global__ void sliding_window_sh_mem( cufftComplex* __restrict__ window_sums,
    // stride is set to the total number of threads in the grid
    int stride = blockDim.x * gridDim.x;
 
-   __shared__ cufftComplex sh_samples[6144];
+   extern __shared__ cufftComplex sh_samples[];
 
-   for ( int index = global_index; index < num_windowed_samples; index+=stride ) {
-      
-      for( int w_index = 0; w_index < window_size; ++w_index ) {
-         sh_samples[threadIdx.x * window_size + w_index] = samples[index + w_index];
-      }
-      __syncthreads();
-      
-      for( int w_index = 0; w_index < window_size; ++w_index ) {
-         sh_samples[blockIdx.x * window_size] = cuCaddf( sh_samples[blockIdx.x * window_size], 
-            sh_samples[threadIdx.x * window_size + w_index] );
-      }
+   for( int index = global_index; index < num_windowed_samples; index+=stride ) {
+
+      sh_samples[threadIdx.x] = samples[index];
       __syncthreads();
 
-      if (threadIdx.x == 0) {
-         window_sums[index] = sh_samples[blockIdx.x * window_size];
-      }
+      for( int w_index = 0; w_index < window_size; ++w_index ) {
+         cufftComplex t_sh_sample = sh_samples[threadIdx.x];
+         __syncthreads();
+         cufftComplex t_w_sh_sample = sh_samples[threadIdx.x + w_index];
+         __syncthreads();
+         sh_samples[threadIdx.x] = cuCaddf( t_sh_sample, t_w_sh_sample );
+         __syncthreads();
+      } 
+
+      __syncthreads();
+      window_sums[index] = sh_samples[threadIdx.x];
    }
-
 }

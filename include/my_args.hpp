@@ -7,12 +7,13 @@
 typedef enum mode_select_e { Sinusoidal, Random, Filebased } mode_select_t;
 
 const std::string default_filename = "input_samples.dat";
-constexpr int default_threads_per_block = 1024;
+constexpr int default_threads_per_block = 96;
 constexpr int default_seed = 0;
 constexpr int default_num_samples = 4000;
 constexpr int default_window_size = 48;
 constexpr int default_num_windowed_samples = default_num_samples - default_window_size;
 constexpr int default_num_sample_bytes = default_num_samples * sizeof(cufftComplex);
+constexpr size_t default_num_shared_bytes = default_window_size * sizeof(cufftComplex);
 
 constexpr int default_adjusted_num_samples = 4096;
 constexpr int default_adjusted_num_sample_bytes = default_adjusted_num_samples * sizeof(cufftComplex);
