@@ -120,7 +120,7 @@ inline int difference_or_zero(int a, int b) { return ((a - b) & ~((a - b) >> 31)
 int my_popcount( unsigned int x );
 
 inline bool is_power_of_two( int val ) {
-   return ( my_popcount(val) > 1 );  
+   return ( my_popcount(val) == 1 );  
 }
 
 #define MILLISECONDS_PER_SECOND (1000.0f)

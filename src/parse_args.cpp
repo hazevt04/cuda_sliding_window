@@ -23,7 +23,7 @@ void print_usage( char* prog_name ) {
 
 void parse_args( my_args_t& my_args, int argc, char** argv ) {
    try {
-      const char* const short_options = "m:t:n:s:f:dh";
+      const char* const short_options = "m:t:n:w:s:f:dh";
       const option long_options[] = {
          {"mode", optional_argument, nullptr, 'm'},
          {"threadsperblock", optional_argument, nullptr, 't'},
