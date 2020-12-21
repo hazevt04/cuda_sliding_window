@@ -1,16 +1,24 @@
-#pragma once
+#include <numeric>
+#include <memory>
+#include <exception>
+#include <algorithm>
+#include <numeric>
 
-#include "my_cufft_utils.hpp"
+#include "my_args.hpp"
+
+#include "my_cuda_utils.hpp"
 #include "pinned_mapped_vec_file_io_funcs.hpp"
 
 #include "sliding_window_kernels.cuh"
 
+#include "device_allocator.hpp"
+#include "pinned_mapped_allocator.hpp"
+
+//#include "VariadicToOutputStream.hpp"
 constexpr float PI = 3.1415926535897238463f;
 constexpr float FREQ = 1000.f;
 constexpr float AMPLITUDE = 50.f;
-
-   
-#include "my_args.hpp"
+constexpr int threads_per_block = 1024;
 
 class SlidingWindowGPU {
 public:
@@ -57,6 +65,7 @@ private:
 
    cufftComplex* d_samples = nullptr;
    cufftComplex* d_window_sums = nullptr;
+   cufftComplex* exp_window_sums = nullptr;
 
    mode_select_t mode_select = default_mode_select;
    
@@ -73,6 +82,8 @@ private:
 
    int seed = default_seed;
    int window_size = default_window_size;
+
+   int num_windowed_samples = default_num_windowed_samples;
 
    size_t num_sample_bytes = default_num_sample_bytes;
    size_t adjusted_num_sample_bytes = default_adjusted_num_sample_bytes;

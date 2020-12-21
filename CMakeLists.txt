@@ -1,57 +1,46 @@
-cmake_minimum_required( VERSION 2.8.0 )
+cmake_minimum_required( VERSION 3.8 )
 
-# Unless your CMake version is at least 3.17,
-# the 'Modern CMake' practices don't work well with 
-# CUDA with respect to detecting GPU architecure
-# and finding CUDA's include directory!
-# This is done the 'old way'
+project( cuda_sliding_window LANGUAGES CXX CUDA )
 
-# If I had a newer cmake, I could do:
-# project( cuda_sliding_window LANGUAGES CXX CUDA )
-# without losing half a day fighting cmake
-project( cuda_sliding_window )
+list(APPEND CUDA_NVCC_FLAGS "--ptxas-options=-v")
+LIST(APPEND CUDA_NVCC_FLAGS "--use_fast_math")
 
-# Force nvcc AND g++/gcc to use C++11
-# and make sure it doesn't use GNU std
-set(CMAKE_CUDA_STANDARD 11)
-set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CUDA_VERBOSE_BUILD ON)
 
-SET(CUDA_SEPARABLE_COMPILATION ON)
-
-# Not needed if cmake version is greater than 3.17
-find_package(CUDA QUIET REQUIRED)
-
-# Selects GPU arch flags for nvcc based on target_CUDA_architectures
-# Xavier is compute capability 7.2
-# Support included for Pascal and Volta microarchitectures
-#cuda_select_nvcc_arch_flags(ARCH_FLAGS 6.0 6.1 6.2 7.0 7.2)
+find_package(CUDA REQUIRED)
 cuda_select_nvcc_arch_flags(ARCH_FLAGS Auto)
 
 LIST(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
 LIST(APPEND CUDA_NVCC_FLAGS "--ptxas-options=-v")
 LIST(APPEND CUDA_NVCC_FLAGS "--use_fast_math")
 
-set(INC_DIRS
+include_directories(
    "include"
-   ${CUDA_INCLUDE_DIRS}
-   )
-
-set(SRCS
-   "src/my_utils.cpp"
-   "src/my_cufft_utils.cpp"
-   "src/my_file_io_funcs.cpp"
-   "src/sliding_window_kernels.cu"
-   "src/SlidingWindowGPU.cu"
-   "src/main.cpp"
-   )
+   "${CUDA_INCLUDE_DIRS}"
+)
 
 set(EXEC_NAME "${CMAKE_PROJECT_NAME}")
 
-include_directories( "${INC_DIRS}" )
+set(SRCS
+   "src/my_utils.cpp"
+   "src/my_file_io_funcs.cpp"
+   "src/my_cufft_utils.cpp"
+   "src/sliding_window_kernels.cu"
+   "src/SlidingWindowGPU.cu"
+   "src/main.cpp"
+)
 
-cuda_add_executable( ${EXEC_NAME} "${SRCS}" )
+
+add_executable( ${EXEC_NAME} "${SRCS}" )
 target_link_libraries( ${EXEC_NAME} ${CUDA_cudadevrt_LIBRARY} m )
+
+set_target_properties( ${EXEC_NAME}
+   PROPERTIES
+   CXX_STANDARD 11
+   CXX_STANDARD_REQUIRED YES
+   CXX_EXTENSIONS NO
+   CUDA_SEPARABLE_COMPILATION ON
+   CMAKE_CUDA_STANDARD 11
+   CMAKE_CUDA_STANDARD_REQUIRED ON
+)
 

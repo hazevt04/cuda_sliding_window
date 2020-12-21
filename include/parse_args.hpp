@@ -33,21 +33,27 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
          {"debug", no_argument, nullptr, 0}
       };
 
+
+
       while (true) {
 
          const auto opt = getopt_long( argc, argv, short_options,
             long_options, nullptr );
 
+         char* end_ptr = nullptr;
+         int t_threads_per_block;
+         int t_num_samples;
+         int t_window_size;
+         int t_seed;
+
          if (-1 == opt) break;
          
          switch (opt) {
             case 'm':
-               my_args.mode_select = decode_mode_select( optarg );
+               my_args.mode_select = decode_mode_select_string( optarg );
                break;
-
             case 't':
-               char* end_ptr = nullptr;
-               int t_threads_per_block = strtol(optarg, &end_ptr, 10);
+               t_threads_per_block = strtol(optarg, &end_ptr, 10);
                if ( end_ptr == nullptr ) { 
                   throw std::runtime_error( std::string{__func__} + 
                      std::string{"(): Invalid string for threads per block entered: "} +
@@ -61,10 +67,8 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
                }
                my_args.threads_per_block = t_threads_per_block;
                break;
-
             case 'n':
-               char* end_ptr = nullptr;
-               int t_num_samples = strtol(optarg, &end_ptr, 10);
+               t_num_samples = strtol(optarg, &end_ptr, 10);
                if ( end_ptr == nullptr ) { 
                   throw std::runtime_error( std::string{__func__} + 
                      std::string{"(): Invalid string for number of samples entered: "} +
@@ -73,10 +77,8 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
                }
                my_args.num_samples = t_num_samples;
                break;
-
             case 'w':
-               char* end_ptr = nullptr;
-               int t_window_size = strtol(optarg, &end_ptr, 10);
+               t_window_size = strtol(optarg, &end_ptr, 10);
                if ( end_ptr == nullptr ) { 
                   throw std::runtime_error( std::string{__func__} + 
                      std::string{"(): Invalid string for window size entered: "} +
@@ -85,10 +87,8 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
                }
                my_args.window_size = t_window_size;
                break;
-
             case 's':
-               char* end_ptr = nullptr;
-               int t_seed = strtol(optarg, &end_ptr, 10);
+               t_seed = strtol(optarg, &end_ptr, 10);
                if ( end_ptr == nullptr ) { 
                   throw std::runtime_error( std::string{__func__} + 
                      std::string{"(): Invalid string for seed entered: "} +
@@ -97,25 +97,20 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
                }
                my_args.seed = t_seed;
                break;
-
             case 'f':
                my_args.filename = optarg;
                break;
-
             case 'd':
                my_args.debug = true;
                break;
-
             case 'h':
                print_usage(argv[0]);
                my_args.help_shown = true;
                break;
-
             case '?':
             default:
                print_usage(argv[0]);
                my_args.help_shown = true;
-               break;
          } // end of switch (c) {
       } // end of while
    } catch( std::exception& ex ) {
@@ -125,3 +120,4 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
       );
    }
 }
+

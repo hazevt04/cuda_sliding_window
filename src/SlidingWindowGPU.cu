@@ -1,7 +1,11 @@
-#include <cuda_runtime.h>
 
+#include "my_utils.hpp"
+#include "my_cuda_utils.hpp"
 #include "my_cufft_utils.hpp"
+
 #include "SlidingWindowGPU.cuh"
+
+#include "sliding_window_kernels.cuh"
 
 SlidingWindowGPU::SlidingWindowGPU( 
    const int new_num_samples, 
@@ -58,7 +62,7 @@ SlidingWindowGPU::SlidingWindowGPU(
 
       window_sums.reserve( adjusted_num_samples );
       window_sums.resize( adjusted_num_samples );
-      std::fill( window_sums.begin(), window_sums.end(), 0 );
+      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
 
       try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_samples, samples.data(), 0 ) );
       try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_window_sums, window_sums.data(), 0 ) );
@@ -126,9 +130,8 @@ void SlidingWindowGPU::calc_exp_window_sums() {
    dout << __func__ << "(): after initial summation, exp_window_sums[0] = { " 
       << exp_window_sums[0].x << ", " << exp_window_sums[0].y << " }\n"; 
       
-   int num_window_sums = num_samples - window_size;
-   dout << __func__ << "(): num_sums is " << num_sums << "\n"; 
-   for( int index = 1; index < num_window_sums; ++index ) {
+   dout << __func__ << "(): num_windowed_samples is " << num_windowed_samples << "\n"; 
+   for( int index = 1; index < num_windowed_samples; ++index ) {
       cufftComplex temp = cuCsubf( exp_window_sums[index-1], samples[index-1] );
       exp_window_sums[index] = cuCaddf( temp, samples[index + window_size-1] );
    } 
@@ -173,8 +176,8 @@ void SlidingWindowGPU::run() {
       gen_expected_window_sums();
 
       if ( debug ) {
-         print_cufftComplexes( samples, num_samples, "Samples: ", " ", "\n" ); 
-         print_vals( exp_window_sums, num_samples, "Expected Window Sums: ", " ", "\n" ); 
+         print_cufftComplexes( samples.data(), num_samples, "Samples: ", " ", "\n" ); 
+         print_cufftComplexes( exp_window_sums, num_samples, "Expected Window Sums: ", " ", "\n" ); 
       }
       
       float gpu_milliseconds = 0.f;

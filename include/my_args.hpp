@@ -9,6 +9,7 @@ constexpr int default_threads_per_block = 1024;
 constexpr int default_seed = 0;
 constexpr int default_num_samples = 4000;
 constexpr int default_window_size = 48;
+constexpr int default_num_windowed_samples = default_num_samples - default_window_size;
 constexpr int default_num_sample_bytes = default_num_samples * sizeof(cufftComplex);
 
 constexpr int default_adjusted_num_samples = 4096;
@@ -31,7 +32,7 @@ mode_select_t decode_mode_select_string( std::string mode_select_string ) {
    }
 }
 
-std::string get_mode_select_string( mode_select_t mode_select ) const {
+std::string get_mode_select_string( mode_select_t mode_select ) {
    if ( mode_select == mode_select_t::Sinusoidal ) {
       return "Sinusoidal";
    } else if ( mode_select == mode_select_t::Random ) {
