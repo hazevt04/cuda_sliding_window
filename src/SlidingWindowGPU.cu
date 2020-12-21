@@ -118,13 +118,16 @@ void SlidingWindowGPU::initialize_samples() {
    } // end of try      
 } // end of void initialize_samples()
 
+
 void SlidingWindowGPU::gen_expected_window_sums() { 
    cpu_run(); 
 }
 
+
 void SlidingWindowGPU::print_results( const std::string& prefix = "Window Sums: " ) {
    print_cufftComplexes( window_sums.data(), num_samples, prefix.c_str(),  " ",  "\n" );
 }
+
 
 void SlidingWindowGPU::calc_exp_window_sums() {
 
@@ -168,6 +171,7 @@ void SlidingWindowGPU::cpu_run() {
       throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
    }
 }
+
 
 void SlidingWindowGPU::run() {
    try {
@@ -230,6 +234,7 @@ void SlidingWindowGPU::run() {
       std::cout << __func__ << "(): " << ex.what() << "\n"; 
    }
 }
+
 
 SlidingWindowGPU::~SlidingWindowGPU() {
    dout << __func__ << "() called\n";

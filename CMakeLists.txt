@@ -28,6 +28,7 @@ set(SRCS
    "src/my_args.cpp"
    "src/sliding_window_kernels.cu"
    "src/SlidingWindowGPU.cu"
+   "src/parse_args.cpp"
    "src/main.cpp"
 )
 
