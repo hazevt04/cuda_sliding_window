@@ -1,9 +1,12 @@
 #pragma once
 
-
 #include "pinned_allocator.hpp"
 
 #include "my_file_io_funcs.hpp"
+
+#include <stdexcept>
+#include <exception>
+#include <string>
 
 template<typename T>
 void write_binary_file(

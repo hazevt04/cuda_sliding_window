@@ -2,11 +2,12 @@
 
 // My Utility Macros for cuFFT, CUDA's FFT library
 
-#include <cmath>
-#include <random>
+#include "my_cuda_utils.hpp"
 
 #include <cufft.h>
-#include "my_utils.hpp"
+
+#include <cmath>
+#include <random>
 
 /////////////////////////////
 // CUFFT Stuff

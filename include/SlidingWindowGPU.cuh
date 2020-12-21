@@ -1,24 +1,18 @@
-#include <numeric>
-#include <memory>
-#include <exception>
-#include <algorithm>
-#include <numeric>
+#pragma once
+
+#include "pinned_mapped_allocator.hpp"
+#include "pinned_mapped_vec_file_io_funcs.hpp"
 
 #include "my_args.hpp"
 
+#include "my_cufft_utils.hpp"
 #include "my_cuda_utils.hpp"
-#include "pinned_mapped_vec_file_io_funcs.hpp"
+#include "my_utils.hpp"
 
-#include "sliding_window_kernels.cuh"
 
-#include "device_allocator.hpp"
-#include "pinned_mapped_allocator.hpp"
-
-//#include "VariadicToOutputStream.hpp"
 constexpr float PI = 3.1415926535897238463f;
 constexpr float FREQ = 1000.f;
 constexpr float AMPLITUDE = 50.f;
-constexpr int threads_per_block = 1024;
 
 class SlidingWindowGPU {
 public:
@@ -48,12 +42,10 @@ public:
 
    void run();
    void cpu_run();
-   void gen_expected_window_sums() { cpu_run(); };
+   void gen_expected_window_sums();
 
-   void print_results( const std::string& prefix = "Window Sums: " ) {
-      print_cufftComplexes( window_sums.data(), num_samples, prefix.c_str(),  " ",  "\n" );
-   }
-
+   void print_results( const std::string& prefix );
+   
    ~SlidingWindowGPU();
 
 private:

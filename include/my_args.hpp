@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <cufft.h>
+
 typedef enum mode_select_e { Sinusoidal, Random, Filebased } mode_select_t;
 
 const std::string default_filename = "input_samples.dat";
@@ -18,32 +20,9 @@ constexpr int default_num_blocks = (default_adjusted_num_samples + (default_thre
 
 const mode_select_t default_mode_select = mode_select_t::Sinusoidal;
 
-mode_select_t decode_mode_select_string( std::string mode_select_string ) {
-   if ( mode_select_string == "Sinusoidal" ) {
-      return mode_select_t::Sinusoidal;
-   } else if ( mode_select_string == "Random" ) {
-      return mode_select_t::Random;
-   } else if ( mode_select_string == "Filebased" ) {
-      return mode_select_t::Filebased;
-   } else {
-      std::cout << "WARNING: Invalid mode select string: " << mode_select_string << "\n";
-      std::cout << "Selecting mode_select_t::Sinusoidal\n"; 
-      return mode_select_t::Sinusoidal;
-   }
-}
+mode_select_t decode_mode_select_string( std::string mode_select_string ); 
 
-std::string get_mode_select_string( mode_select_t mode_select ) {
-   if ( mode_select == mode_select_t::Sinusoidal ) {
-      return "Sinusoidal";
-   } else if ( mode_select == mode_select_t::Random ) {
-      return "Random";
-   } else if ( mode_select == mode_select_t::Filebased ) {
-      return "Filebased";
-   } else {
-      return "Unknown";
-   }
-} // end of std::string get_mode_select_string( mode_select_t mode_select ) const
-
+std::string get_mode_select_string( mode_select_t mode_select );
 
 typedef struct my_args_s {
    mode_select_t mode_select = default_mode_select;

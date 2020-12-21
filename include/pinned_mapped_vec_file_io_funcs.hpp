@@ -1,5 +1,7 @@
 #pragma once
 
+#include <exception>
+#include <stdexcept>
 
 #include "pinned_mapped_allocator.hpp"
 

@@ -1,5 +1,12 @@
 #pragma once
 
+#include <cuda_runtime.h>
+
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+#include <exception>
+
 // Pinned Allocator Class
 // Allows use of STL clases (like std::vector) with cudaMalloc() and cudaFree()
 // (like thrust's device_vector)
@@ -37,7 +44,7 @@ class pinned_mapped_allocator {
          }
          return result;
       } catch ( std::exception& ex ) {
-         std::cerr << __func__ << "(): ERROR: " << ex.what() << "\n";
+         std::cout << __func__ << "(): ERROR: " << ex.what() << "\n";
          return nullptr;
       }
     }

@@ -24,7 +24,7 @@ private:
     std::string m_separator;
 };
 
-#define debug_cout(debug, ...) { \
+#define dvout(debug, ...) { \
    if (debug) { \
       VariadicToOutputStream(std::cout),__VA_ARGS__; \
    } \

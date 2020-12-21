@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cuda_runtime.h>
+
 // Device Allocator Class
 // Allows use of STL clases (like std::vector) with cudaMalloc() and cudaFree()
 // (like thrust's device_vector)

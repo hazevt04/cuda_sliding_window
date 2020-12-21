@@ -1,10 +1,13 @@
 #pragma once
 
-#include <getopt.h>
-
-#include "my_utils.hpp"
-
 #include "my_args.hpp"
+
+
+#include <string>
+#include <stdexcept>
+#include <exception>
+
+#include <getopt.h>
 
 static void print_usage( char* prog_name ) {
    std::cout << "Usage: " << prog_name << ":\n";
@@ -32,8 +35,6 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
          {"filename", optional_argument, nullptr, 'f'},
          {"debug", no_argument, nullptr, 0}
       };
-
-
 
       while (true) {
 

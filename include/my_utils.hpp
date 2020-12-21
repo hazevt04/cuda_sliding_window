@@ -4,22 +4,26 @@
 #define FAILURE -2
 
 #include <cstdio>
-#include <iostream>
-
-#include <chrono>
 #include <cstddef>
 #include <cstdlib>
-#include <iterator>
-#include <stdarg.h>
+
+#include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
+#include <stdexcept>
+#include <exception>
+
+#include <stdarg.h>
+
+#include <chrono>
+#include <iterator>
 #include <complex>
 #include <algorithm>
 #include <random>
-#include <exception>
 #include <memory>
 
-#include "VariadicToOutputStream.hpp"
+//#include "VariadicToOutputStream.hpp"
 
 #ifndef check_status
 #   define check_status(status, msg)                     \
@@ -75,6 +79,9 @@
       }
 #endif
 
+#ifndef dout
+#  define dout debug && std::cout
+#endif
 
 #ifndef SWAP
 #   define SWAP(a, b) \
@@ -85,7 +92,6 @@
       }
 #endif
 
-
 #ifndef MAX
 #   define MAX(a, b) ((a) > (b)) ? (a) : (b);
 #endif
@@ -95,15 +101,14 @@
 #   define CEILING(a, b) ((a) + ((b)-1)) / (b);
 #endif
 
+typedef long long llong;
+
 // Already included in C++14
 template<typename T, typename... Args>
 std::unique_ptr<T> my_make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-#ifndef dout
-#  define dout debug && std::cout
-#endif
 
 // Hacker's Delight Second Edition pg 44 ('doz')
 // Only valid for signed integers, -2^30 < a,b <=(2^30)-1
@@ -112,20 +117,9 @@ inline int difference_or_zero(int a, int b) { return ((a - b) & ~((a - b) >> 31)
 
 // Just in case there is no intrinsic
 // From Hacker's Delight
-int my_popcount(unsigned int x) {
-   x -= ((x >> 1) & 0x55555555);
-   x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-   x = (x + (x >> 4)) & 0x0F0F0F0F;
-   x += (x >> 8);
-   x += (x >> 16);    
-   return x & 0x0000003F;
-}
+int my_popcount( unsigned int x );
 
 inline bool is_power_of_two( int val ) {
-   return ( my_popcount(val) > 1 );  
-}
-
-inline bool is_power_of_two( unsigned int val ) {
    return ( my_popcount(val) > 1 );  
 }
 
@@ -194,7 +188,6 @@ void gen_reals( std::vector<RealType>& reals, const float lower, const float upp
    } 
 }
 
-#include <iomanip>
 
 template <class T>
 void print_vals(const std::vector<T>& vals,
@@ -287,7 +280,6 @@ std::pair<bool, int> mismatch_where(const std::vector<T>& lvals, const std::vect
 
 template<typename T>
 using complex_vec = std::vector<std::complex<T>>;
-
 
 template<typename T>
 bool complex_vals_are_close( const complex_vec<T>& lvals, const complex_vec<T>& rvals, const T& max_diff ) {
