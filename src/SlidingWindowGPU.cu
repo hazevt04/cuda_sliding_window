@@ -62,6 +62,7 @@ SlidingWindowGPU::SlidingWindowGPU(
       adjusted_num_sample_bytes = adjusted_num_samples * sizeof( cufftComplex );
 
       num_shared_bytes = threads_per_block * window_size * sizeof( cufftComplex );
+      //num_shared_bytes = threads_per_block * sizeof( cufftComplex );
       dout << __func__ << "(): number of shared bytes is " << num_shared_bytes << "\n";
       
 
@@ -222,7 +223,7 @@ void SlidingWindowGPU::run() {
       Time_Point start = Steady_Clock::now();
       
       //sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-      sliding_window_sh_mem<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+      sliding_window_sh_mem_multi_window<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
          d_window_sums, 
          d_samples,
          window_size,
