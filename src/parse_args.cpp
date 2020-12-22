@@ -10,7 +10,7 @@
 void print_usage( char* prog_name ) {
    std::cout << "Usage: " << prog_name << ":\n";
    std::cout << "-m/--modeselect <selection> Select the mode for\n";
-   std::cout << "-t/--threadsperblock <num>  Number of threads per block (Must be power of 2)\n"; 
+   std::cout << "-t/--threadsperblock <num>  Number of threads per block\n"; 
    std::cout << "-n/--nsamples <num>         Number of Samples (ignored for Filebased select)\n";
    std::cout << "-w/--winsize <num>          Number of Samples Per Window\n"; 
    std::cout << "-s/--seed <num>             Seed for the random number generator (only used if Random select)\n";
@@ -58,12 +58,7 @@ void parse_args( my_args_t& my_args, int argc, char** argv ) {
                      std::string{"(): Invalid string for threads per block entered: "} +
                      optarg + std::string{". Must be a number."} 
                   );
-               } else if ( !is_power_of_two(t_threads_per_block) ) {
-                  throw std::runtime_error( std::string{__func__} + 
-                     std::string{"(): Invalid string for threads per block entered: "} +
-                     optarg + std::string{". Must be a power of two"} 
-                  );
-               }
+               } 
                my_args.threads_per_block = t_threads_per_block;
                break;
             case 'n':

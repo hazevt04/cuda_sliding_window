@@ -40,20 +40,17 @@ __global__ void sliding_window_sh_mem( cufftComplex* __restrict__ window_sums,
    extern __shared__ cufftComplex sh_samples[];
 
    for( int index = global_index; index < num_windowed_samples; index+=stride ) {
-
-      sh_samples[threadIdx.x] = samples[index];
-      __syncthreads();
-
+      
       for( int w_index = 0; w_index < window_size; ++w_index ) {
-         cufftComplex t_sh_sample = sh_samples[threadIdx.x];
-         __syncthreads();
-         cufftComplex t_w_sh_sample = sh_samples[threadIdx.x + w_index];
-         __syncthreads();
-         sh_samples[threadIdx.x] = cuCaddf( t_sh_sample, t_w_sh_sample );
-         __syncthreads();
-      } 
-
+         sh_samples[window_size * threadIdx.x + w_index] = samples[ global_index + w_index ];
+      }
       __syncthreads();
-      window_sums[index] = sh_samples[threadIdx.x];
+
+      for( int w_index = 1; w_index < window_size; ++w_index ) {
+         sh_samples[threadIdx.x * window_size] = cuCaddf( sh_samples[threadIdx.x * window_size], sh_samples[threadIdx.x * window_size + w_index] );
+         __syncthreads();
+      }
+
+      window_sums[global_index] = sh_samples[threadIdx.x * window_size];
    }
 }
