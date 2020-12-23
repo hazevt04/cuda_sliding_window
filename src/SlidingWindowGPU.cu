@@ -34,6 +34,8 @@ SlidingWindowGPU::SlidingWindowGPU(
       dout << __func__ << "(): num_samples is " << num_samples << "\n";
 
       num_blocks = (num_samples + (threads_per_block-1))/threads_per_block;
+      //num_blocks /= 2;
+
       dout << __func__ << "(): num_blocks is " << num_blocks << "\n";
 
       adjusted_num_samples = threads_per_block * num_blocks;
@@ -196,7 +198,7 @@ void SlidingWindowGPU::run() {
       float gpu_milliseconds = 0.f;
       Time_Point start = Steady_Clock::now();
       
-      sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+      sliding_window_vectorized_loads<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
          d_window_sums, 
          d_samples,
          window_size,

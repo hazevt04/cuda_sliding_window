@@ -20,6 +20,12 @@ __global__ void sliding_window_original( cufftComplex* __restrict__ window_sums,
    const int window_size, 
    const int num_windowed_samples );
 
+// Vectorized Loads Implementation
+__global__ void sliding_window_vectorized_loads( cufftComplex* __restrict__ window_sums, 
+   cufftComplex* const __restrict__ samples, 
+   const int window_size, 
+   const int num_windowed_samples );
+
 // Shared Memory Implementation
 __global__ void sliding_window_sh_mem( cufftComplex* __restrict__ window_sums, 
    cufftComplex* const __restrict__ samples, 
