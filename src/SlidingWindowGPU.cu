@@ -56,7 +56,7 @@ SlidingWindowGPU::SlidingWindowGPU(
             "(): Empty USER env. USER environment variable needed for paths to files" ); 
       }
       
-      std::string filepath_prefix = "/home/" + std::string{user_env} + "/Sandbox/CUDA/norm_autocorr/";
+      std::string filepath_prefix = "/home/" + std::string{user_env} + "/Sandbox/CUDA/cuda_sliding_window/";
 
       filepath = filepath_prefix + filename;
 
@@ -67,13 +67,19 @@ SlidingWindowGPU::SlidingWindowGPU(
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       
       d_window_sums.reserve( adjusted_num_samples );
-      d_window_sums.resize( adjusted_num_samples );
-      
+      dout << __func__ << "() after d_window_sums.reserve()\n";
+      //d_window_sums.resize( adjusted_num_samples );
+      //dout << __func__ << "() after d_window_sums.resize()\n";
+
       samples.reserve( adjusted_num_samples );
+      dout << __func__ << "() after samples.reserve()\n";
       samples.resize( adjusted_num_samples );
+      dout << __func__ << "() after samples.resize()\n";
       
       d_samples.reserve( adjusted_num_samples );
-      d_samples.resize( adjusted_num_samples );
+      dout << __func__ << "() after d_samples.reserve()\n";
+      //d_samples.resize( adjusted_num_samples );
+      //dout << __func__ << "() after d_samples.resize()\n";
 
       exp_window_sums = new cufftComplex[num_samples];
       for( int index = 0; index < num_samples; ++index ) {
@@ -213,8 +219,8 @@ void SlidingWindowGPU::run_warmup() {
          adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
 
       sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums, 
-         d_samples,
+         d_window_sums.data(), 
+         d_samples.data(),
          window_size,
          num_windowed_samples 
       );
@@ -244,8 +250,8 @@ void SlidingWindowGPU::run_loop_unroll( const std::string& prefix = "Loop Unroll
          adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
       
       sliding_window_loop_unroll<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums, 
-         d_samples,
+         d_window_sums.data(), 
+         d_samples.data(),
          window_size,
          num_windowed_samples 
       );
@@ -283,8 +289,8 @@ void SlidingWindowGPU::run_original( const std::string& prefix = "Original: " ) 
          adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
       
       sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums, 
-         d_samples,
+         d_window_sums.data(), 
+         d_samples.data(),
          window_size,
          num_windowed_samples 
       );

@@ -2,6 +2,12 @@
 
 #include <cuda_runtime.h>
 
+
+#include <vector>
+#include <iostream>
+#include <stdexcept>
+#include <exception>
+
 // Device Allocator Class
 // Allows use of STL clases (like std::vector) with cudaMalloc() and cudaFree()
 // (like thrust's device_vector)
@@ -39,7 +45,7 @@ class device_allocator {
          }
          return result;
       } catch ( std::exception& ex ) {
-         std::cerr << __func__ << "(): ERROR: " << ex.what() << "\n";
+         std::cout << __func__ << "(): ERROR: " << ex.what() << "\n";
          return nullptr;
       }
     }
