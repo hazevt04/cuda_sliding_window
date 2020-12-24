@@ -40,6 +40,11 @@ public:
             my_args.debug ) 
    {}
 
+   void check_results( const std::string& prefix );
+   void run_warmup();
+   void run_vectorized_loads( const std::string& prefix );
+   void run_original( const std::string& prefix );
+
    void run();
    void cpu_run();
    void gen_expected_window_sums();

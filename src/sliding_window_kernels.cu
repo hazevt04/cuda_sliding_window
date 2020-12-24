@@ -40,18 +40,13 @@ __global__ void sliding_window_vectorized_loads(
    // stride is set to the total number of threads in the grid
    int stride = blockDim.x * gridDim.x;
    for ( int index = global_index; index < num_windowed_samples; index+=stride ) {
-      /*cufftComplex t_window_sum = make_cuFloatComplex(0.f, 0.f);*/
-      cufftComplex t_window_sum = samples[index];
+      cufftComplex t_window_sum = make_cuFloatComplex(0.f, 0.f);
 
-      /*for ( int w_index = 0; w_index < window_size; ++w_index ) {*/
-      for ( int w_index = 1; w_index < window_size; w_index+=2 ) {
-         /*t_window_sum = make_cuFloatComplex( ( t_window_sum.x + samples[index + w_index].x ),*/
-         /*   ( t_window_sum.y + samples[index + w_index].y ) );*/
+      for ( int w_index = 0; w_index < window_size; w_index+=2 ) {
          t_window_sum = cuCaddf( t_window_sum, samples[index + w_index] );
          t_window_sum = cuCaddf( t_window_sum, samples[index + w_index + 1] );
       }
 
-      /*window_sums[index] = make_cuFloatComplex( t_window_sum.x, t_window_sum.y );*/
       window_sums[index] = t_window_sum;
    }
 } // end of __global__ void sliding_window_original
