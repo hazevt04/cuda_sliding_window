@@ -222,7 +222,7 @@ void SlidingWindowGPU::run_warmup() {
 
 
 
-void SlidingWindowGPU::run_vectorized_loads( const std::string& prefix = "Vectorized Loads: " ) {
+void SlidingWindowGPU::run_loop_unroll( const std::string& prefix = "Loop Unroll: " ) {
    try {
       cudaError_t cerror = cudaSuccess;
       float gpu_milliseconds = 0.f;
@@ -231,7 +231,7 @@ void SlidingWindowGPU::run_vectorized_loads( const std::string& prefix = "Vector
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
-      sliding_window_vectorized_loads<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+      sliding_window_loop_unroll<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
          d_window_sums, 
          d_samples,
          window_size,
@@ -307,8 +307,8 @@ void SlidingWindowGPU::run() {
 
       run_warmup();
       
-      run_vectorized_loads();
-      check_results( "Vectorized Loads: " );
+      run_loop_unroll();
+      check_results( "Loop Unroll: " );
       
       run_original();
       check_results( "Original: " );

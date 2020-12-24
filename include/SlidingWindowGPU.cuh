@@ -42,7 +42,7 @@ public:
 
    void check_results( const std::string& prefix );
    void run_warmup();
-   void run_vectorized_loads( const std::string& prefix );
+   void run_loop_unroll( const std::string& prefix );
    void run_original( const std::string& prefix );
 
    void run();

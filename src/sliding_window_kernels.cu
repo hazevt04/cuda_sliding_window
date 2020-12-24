@@ -29,7 +29,7 @@ __global__ void sliding_window_original(
    }
 } // end of __global__ void sliding_window_original
 
-__global__ void sliding_window_vectorized_loads(
+__global__ void sliding_window_loop_unroll(
    cufftComplex* __restrict__ window_sums, 
    cufftComplex* const __restrict__ samples, 
    const int window_size, 
