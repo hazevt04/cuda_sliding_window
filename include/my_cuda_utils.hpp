@@ -12,6 +12,46 @@
 #define CUDA_CALLABLE_MEMBER
 #endif
 
+// Why doesn't NVidia include the operators for their vector types?
+// (e.g. float2, int2, float2, float4 and etc)
+// Doing Nvidia's work for them... Ugh.
+__inline__ __host__ __device__
+float4 operator+(const float4& lval, const float4& rval) {
+   return make_float4(
+      lval.x + rval.x,
+      lval.y + rval.y,
+      lval.z + rval.z,
+      lval.w + rval.w 
+   );
+}
+
+__inline__ __host__ __device__
+float4& operator+=(float4& result, const float4& other) {
+   result.x += other.x;
+   result.y += other.y;
+   result.z += other.z;
+   result.w += other.w;
+
+   return result;
+}
+
+__inline__ __host__ __device__
+float2& operator+=(float2& result, const float2& other) {
+   result.x += other.x;
+   result.y += other.y;
+
+   return result;
+}
+
+//__host__ __device__
+//float2 operator+(const float2& lval, const float2& rval);
+
+//__host__ __device__
+//float4 operator-(const float4& lval, const float4& rval);
+
+//__host__ __device__
+//float4 operator-(const float4& lval, const float4& rval);
+
 inline void try_cudaStreamCreate( cudaStream_t* pStream ) {
    try {
       cudaError_t cerror = cudaStreamCreate( pStream );

@@ -55,6 +55,7 @@ private:
    void calc_exp_window_sums();
    void run_warmup();
    void run_original( const std::string& prefix );
+   void run_vectorized_loads( const std::string& prefix );
 
    pinned_vector<cufftComplex> samples;
    pinned_vector<cufftComplex> window_sums;

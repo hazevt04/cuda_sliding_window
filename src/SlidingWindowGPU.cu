@@ -95,8 +95,8 @@ void SlidingWindowGPU::initialize_samples() {
       if( mode_select == mode_select_t::Sinusoidal ) {
          dout << __func__ << "(): Sinusoidal Sample Test Selected\n";
          for( size_t index = 0; index < num_samples; ++index ) {
-            float t_val_real = AMPLITUDE*sin(2*PI*FREQ*index);
-            float t_val_imag = AMPLITUDE*cos(2*PI*FREQ*index);
+            float t_val_real = (float)index; //AMPLITUDE*sin(2*PI*FREQ*index);
+            float t_val_imag = (float)index;//AMPLITUDE*cos(2*PI*FREQ*index);
             samples[index] = make_cuFloatComplex( t_val_real, t_val_imag );
          }
 
@@ -267,6 +267,48 @@ void SlidingWindowGPU::run_original( const std::string& prefix = "Original: " ) 
 }
 
 
+void SlidingWindowGPU::run_vectorized_loads( const std::string& prefix = "Original: " ) {
+   try {
+      cudaError_t cerror = cudaSuccess;
+      float gpu_milliseconds = 0.f;
+      int num_shared_bytes = 0;
+
+      // adjusting number of blocks and memory bound for using half as many threads
+      num_blocks = ((adjusted_num_samples/2) + ( threads_per_block - 1 ))/threads_per_block;
+
+      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
+      Time_Point start = Steady_Clock::now();
+      
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
+         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
+      
+      sliding_window_vectorized_loads<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+         d_window_sums.data(), 
+         d_samples.data(),
+         window_size,
+         num_windowed_samples 
+      );
+
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
+         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
+
+      try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
+      
+      Duration_ms duration_ms = Steady_Clock::now() - start;
+      gpu_milliseconds = duration_ms.count();
+
+      float samples_per_second = (num_samples*1000.f)/gpu_milliseconds;
+      std::cout << prefix << "It took the GPU " << gpu_milliseconds 
+         << " milliseconds to process " << num_samples 
+         << " samples\n";
+      std::cout << prefix << "That's a rate of " << samples_per_second/1e6 << " Msamples processed per second\n"; 
+
+   } catch( std::exception& ex ) {
+      throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
+   }
+}
+
+
 void SlidingWindowGPU::run() {
    try {
       dout << __func__ << "(): num_samples is " << num_samples << "\n"; 
@@ -286,8 +328,11 @@ void SlidingWindowGPU::run() {
 
       run_warmup();
 
-      run_original();
+      run_original( "Original: " );
       check_results( "Original: " );
+      
+      run_vectorized_loads( "Vectorized Loads: " );
+      check_results( "Vectorized Loads: " );
 
    } catch( std::exception& ex ) {
       std::cout << __func__ << "(): " << ex.what() << "\n"; 
