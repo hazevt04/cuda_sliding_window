@@ -128,3 +128,30 @@ __global__ void sliding_window_vectorized_loads(
    //}
 } // end of __global__ void sliding_window_vectorized_loads
 
+
+__global__ void sliding_window_vectorized_loads2(
+   cufftComplex* __restrict__ window_sums, 
+   cufftComplex* const __restrict__ samples, 
+   const int window_size, 
+   const int num_windowed_samples ) {
+   
+   // Assuming one stream
+   int global_index = blockIdx.x * blockDim.x + threadIdx.x;
+   // stride is set to the total number of threads in the grid
+   int stride = blockDim.x * gridDim.x;
+   
+   for( int index = global_index; index < num_windowed_samples/2; index+=stride ) {
+      float4 temp = make_float4( 0.f, 0.f, 0.f, 0.f );
+      float2 temp2 = make_float2( 0.f, 0.f ); 
+      for ( int w_index = 1; w_index < window_size; w_index +=2 ) {
+         temp += reinterpret_cast<float4*>(samples)[index + w_index];
+         temp2.x += temp.x + temp.z;
+         temp2.y += temp.y + temp.w;
+      }
+
+      //reinterpret_cast<float4*>(window_sums)[index] = temp;
+      window_sums[index] = temp2;
+      window_sums[index] = temp2;
+   } 
+}
+
