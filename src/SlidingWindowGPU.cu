@@ -54,7 +54,7 @@ SlidingWindowGPU::SlidingWindowGPU(
             "(): Empty USER env. USER environment variable needed for paths to files" ); 
       }
       
-      std::string filepath_prefix = "/home/" + std::string{user_env} + "/Sandbox/CUDA/norm_autocorr/";
+      std::string filepath_prefix = "/home/" + std::string{user_env} + "/Sandbox/CUDA/cuda_sliding_window/";
 
       filepath = filepath_prefix + filename;
 
@@ -64,11 +64,14 @@ SlidingWindowGPU::SlidingWindowGPU(
       window_sums.resize( adjusted_num_samples );
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       
+      d_window_sums.reserve( adjusted_num_samples );
+      dout << __func__ << "() after d_window_sums.reserve()\n";      
+
       samples.reserve( adjusted_num_samples );
       samples.resize( adjusted_num_samples );
 
-      try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_samples, samples.data(), 0 ) );
-      try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_window_sums, window_sums.data(), 0 ) );
+      d_samples.reserve( adjusted_num_samples );
+      dout << __func__ << "() after d_samples.reserve()\n";      
       
       exp_window_sums = new cufftComplex[num_samples];
       for( int index = 0; index < num_samples; ++index ) {
@@ -163,9 +166,100 @@ void SlidingWindowGPU::cpu_run() {
       
       Duration_ms duration_ms = Steady_Clock::now() - start;
       cpu_milliseconds = duration_ms.count();
-
+      
+      float samples_per_second = (num_samples*1000.f)/cpu_milliseconds;
       std::cout << "It took the CPU " << cpu_milliseconds << " milliseconds to process " << num_samples << " samples\n";
-      std::cout << "That's a rate of " << ((num_samples*1000.f)/cpu_milliseconds) << " samples processed per second\n\n"; 
+      std::cout << "That's a rate of " << samples_per_second/1e6 << " Msamples processed per second\n\n"; 
+
+   } catch( std::exception& ex ) {
+      throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
+   }
+}
+
+
+void SlidingWindowGPU::check_results( const std::string& prefix = "Original" ) {
+   try {
+      float max_diff = 1;
+      bool all_close = false;
+      if ( debug ) {
+         print_results( "Window Sums: " );
+         std::cout << "\n"; 
+      }
+      dout << __func__ << "(): " << prefix << "Window Sums Check:\n"; 
+      all_close = cufftComplexes_are_close( window_sums.data(), exp_window_sums, num_samples, max_diff, "window sums: ", debug );
+      if (!all_close) {
+         throw std::runtime_error{ std::string{__func__} + 
+            std::string{"(): "} + prefix + 
+            std::string{"Mismatch between actual window_sums from GPU and expected window_sums."} };
+      }
+      std::cout << prefix << "All " << num_samples << " Window Sums matched expected Window Sums. Test Passed.\n\n"; 
+
+   } catch( std::exception& ex ) {
+      throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
+   }
+
+}
+
+
+void SlidingWindowGPU::run_warmup() {
+   try {
+      cudaError_t cerror = cudaSuccess;
+      int num_shared_bytes = 0;
+      
+      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
+
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
+         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
+
+      sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+         d_window_sums.data(), 
+         d_samples.data(),
+         window_size,
+         num_windowed_samples 
+      );
+
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
+         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
+
+      try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
+      
+   } catch( std::exception& ex ) {
+      throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
+   }
+}
+
+void SlidingWindowGPU::run_original( const std::string& prefix = "Original: " ) {
+   try {
+      cudaError_t cerror = cudaSuccess;
+      float gpu_milliseconds = 0.f;
+      int num_shared_bytes = 0;
+
+      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
+      Time_Point start = Steady_Clock::now();
+      
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
+         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
+      
+      sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+         d_window_sums.data(), 
+         d_samples.data(),
+         window_size,
+         num_windowed_samples 
+      );
+
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
+         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
+
+      try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
+      
+      Duration_ms duration_ms = Steady_Clock::now() - start;
+      gpu_milliseconds = duration_ms.count();
+
+      float samples_per_second = (num_samples*1000.f)/gpu_milliseconds;
+      std::cout << prefix << "It took the GPU " << gpu_milliseconds 
+         << " milliseconds to process " << num_samples 
+         << " samples\n";
+      std::cout << prefix << "That's a rate of " << samples_per_second/1e6 << " Msamples processed per second\n"; 
 
    } catch( std::exception& ex ) {
       throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
@@ -175,9 +269,6 @@ void SlidingWindowGPU::cpu_run() {
 
 void SlidingWindowGPU::run() {
    try {
-      cudaError_t cerror = cudaSuccess;
-      int num_shared_bytes = 0;
-
       dout << __func__ << "(): num_samples is " << num_samples << "\n"; 
       dout << __func__ << "(): threads_per_block is " << threads_per_block << "\n"; 
       dout << __func__ << "(): num_blocks is " << num_blocks << "\n\n"; 
@@ -192,43 +283,11 @@ void SlidingWindowGPU::run() {
          print_cufftComplexes( samples.data(), num_samples, "Samples: ", " ", "\n" ); 
          print_cufftComplexes( exp_window_sums, num_samples, "Expected Window Sums: ", " ", "\n" ); 
       }
-      
-      float gpu_milliseconds = 0.f;
-      Time_Point start = Steady_Clock::now();
-      
-      sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums, 
-         d_samples,
-         window_size,
-         num_windowed_samples 
-      );
 
-      try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
-      
-      Duration_ms duration_ms = Steady_Clock::now() - start;
-      gpu_milliseconds = duration_ms.count();
+      run_warmup();
 
-      float max_diff = 1;
-      bool all_close = false;
-      if ( debug ) {
-         print_results( "Window Sums: " );
-         std::cout << "\n"; 
-      }
-      dout << __func__ << "(): Window Sums Check:\n"; 
-      all_close = cufftComplexes_are_close( window_sums.data(), exp_window_sums, num_samples, max_diff, "window sums: ", debug );
-      if (!all_close) {
-         throw std::runtime_error{ std::string{__func__} + 
-            std::string{"(): Mismatch between actual window_sums from GPU and expected window_sums."} };
-      }
-      dout << "\n"; 
-      
-      std::cout << "All " << num_samples << " Window Sums matched expected Window Sums. Test Passed.\n\n"; 
-      std::cout << "It took the GPU " << gpu_milliseconds 
-         << " milliseconds to process " << num_samples 
-         << " samples\n";
-
-      std::cout << "That's a rate of " << ( (num_samples*1000.f)/gpu_milliseconds ) << " samples processed per second\n"; 
-
+      run_original();
+      check_results( "Original: " );
 
    } catch( std::exception& ex ) {
       std::cout << __func__ << "(): " << ex.what() << "\n"; 
@@ -240,6 +299,9 @@ SlidingWindowGPU::~SlidingWindowGPU() {
    dout << __func__ << "() called\n";
    samples.clear();    
    window_sums.clear();
+   
+   d_samples.clear();    
+   d_window_sums.clear();
 
    if ( exp_window_sums ) delete [] exp_window_sums;
    
