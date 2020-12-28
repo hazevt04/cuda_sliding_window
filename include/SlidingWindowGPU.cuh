@@ -1,7 +1,8 @@
 #pragma once
 
-#include "pinned_mapped_allocator.hpp"
-#include "pinned_mapped_vec_file_io_funcs.hpp"
+#include "device_allocator.hpp"
+#include "pinned_allocator.hpp"
+#include "pinned_vec_file_io_funcs.hpp"
 
 #include "my_args.hpp"
 
@@ -40,6 +41,7 @@ public:
             my_args.debug ) 
    {}
 
+   void check_results( const std::string& prefix );
    void run();
    void cpu_run();
    void gen_expected_window_sums();
@@ -51,12 +53,15 @@ public:
 private:
    void initialize_samples();
    void calc_exp_window_sums();
+   void run_warmup();
+   void run_original( const std::string& prefix );
 
-   pinned_mapped_vector<cufftComplex> samples;
-   pinned_mapped_vector<cufftComplex> window_sums;
+   pinned_vector<cufftComplex> samples;
+   pinned_vector<cufftComplex> window_sums;
 
-   cufftComplex* d_samples = nullptr;
-   cufftComplex* d_window_sums = nullptr;
+   device_vector<cufftComplex> d_samples;
+   device_vector<cufftComplex> d_window_sums;
+
    cufftComplex* exp_window_sums = nullptr;
 
    mode_select_t mode_select = default_mode_select;

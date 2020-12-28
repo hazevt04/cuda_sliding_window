@@ -7,14 +7,14 @@
 #include <stdexcept>
 #include <exception>
 
-// Device Allocator Class
+// Pinned Allocator Class
 // Allows use of STL clases (like std::vector) with cudaMalloc() and cudaFree()
 // (like thrust's device_vector)
 // Based on Jared Hoberock, NVIDIA:
 // https://github.com/jaredhoberock/managed_allocator/blob/master/managed_allocator.hpp
 
 template<class T>
-class device_allocator {
+class pinned_allocator {
   public:
     using value_type = T;
     using reference = T&;
@@ -23,11 +23,11 @@ class device_allocator {
     // Make sure that only 1 allocation is done
     // per instance of this class
     bool memory_is_allocated;
-    device_allocator():
+    pinned_allocator():
       memory_is_allocated( false ) {}
 
     template<class U>
-    device_allocator(const device_allocator<U>&):
+    pinned_allocator(const pinned_allocator<U>&):
       memory_is_allocated( false ) {}
   
     value_type* allocate(size_t n) {
@@ -35,38 +35,38 @@ class device_allocator {
          value_type* result = nullptr;
          if ( !memory_is_allocated ) {
      
-            cudaError_t error = cudaMalloc(&result, n*sizeof(T));
+            cudaError_t error = cudaHostAlloc(&result, n*sizeof(T), cudaHostAllocDefault);
         
             if(error != cudaSuccess) {
-              throw std::runtime_error("device_allocator::allocate(): cudaMalloc()");
+              throw std::runtime_error("pinned_allocator::allocate(): cudaHostAlloc()");
             }
             memory_is_allocated = true;
          }
          return result;
       } catch ( std::exception& ex ) {
-         std::cerr << __func__ << "(): ERROR: " << ex.what() << "\n";
+         std::cout << __func__ << "(): ERROR: " << ex.what() << "\n";
          return nullptr;
       }
     }
     
     void deallocate(value_type* ptr, size_t size) {
        if ( ptr ) {
-         cudaFree( ptr );
+         cudaFreeHost( ptr );
          ptr = nullptr;
        }
     } 
 };
 
 template<class T1, class T2>
-bool operator==(const device_allocator<T1>&, const device_allocator<T2>&) {
+bool operator==(const pinned_allocator<T1>&, const pinned_allocator<T2>&) {
   return true;
 }
 
 template<class T1, class T2>
-bool operator!=(const device_allocator<T1>& lhs, const device_allocator<T2>& rhs) {
+bool operator!=(const pinned_allocator<T1>& lhs, const pinned_allocator<T2>& rhs) {
   return !(lhs == rhs);
 }
 
 template<class T>
-using device_vector = std::vector<T, device_allocator<T>>;
+using pinned_vector = std::vector<T, pinned_allocator<T>>;
 
