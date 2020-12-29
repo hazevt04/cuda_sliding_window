@@ -282,7 +282,7 @@ void SlidingWindowGPU::run_vectorized_loads( const std::string& prefix = "Origin
       try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
          adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
       
-      sliding_window_vectorized_loads2<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+      sliding_window_vectorized_loads<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
          d_window_sums.data(), 
          d_samples.data(),
          window_size,
