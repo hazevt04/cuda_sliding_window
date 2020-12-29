@@ -32,8 +32,14 @@ __global__ void sliding_window_unrolled_2x( cufftComplex* __restrict__ window_su
    const int window_size, 
    const int num_windowed_samples );
 
-// Unrolled 2x Implementation
+// Unrolled 4x Implementation
 __global__ void sliding_window_unrolled_4x( cufftComplex* __restrict__ window_sums, 
+   cufftComplex* const __restrict__ samples, 
+   const int window_size, 
+   const int num_windowed_samples );
+
+// Unrolled 8x Implementation
+__global__ void sliding_window_unrolled_8x( cufftComplex* __restrict__ window_sums, 
    cufftComplex* const __restrict__ samples, 
    const int window_size, 
    const int num_windowed_samples );

@@ -67,6 +67,7 @@ private:
    void run_original( const std::string& prefix );
    void run_unrolled_2x( const std::string& prefix );
    void run_unrolled_4x( const std::string& prefix );
+   void run_unrolled_8x( const std::string& prefix );
 
    pinned_vector<cufftComplex> samples;
    pinned_vector<cufftComplex> window_sums;

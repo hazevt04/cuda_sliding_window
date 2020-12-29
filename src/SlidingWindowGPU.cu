@@ -370,7 +370,50 @@ void SlidingWindowGPU::run_unrolled_4x( const std::string& prefix = "Unrolled 4x
    } catch( std::exception& ex ) {
       throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
    }
-}
+} // end of void SlidingWindowGPU::run_unrolled_4x( const std::string& prefix = "Unrolled 4x: " )
+
+
+void SlidingWindowGPU::run_unrolled_8x( const std::string& prefix = "Unrolled 8x: " ) {
+   try {
+      cudaError_t cerror = cudaSuccess;
+      float gpu_milliseconds = 0.f;
+      int num_shared_bytes = 0;
+
+      // adjusting number of blocks and memory bound for using half as many threads
+      num_blocks = ((adjusted_num_samples/8) + ( threads_per_block - 1 ))/threads_per_block;
+
+      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
+      Time_Point start = Steady_Clock::now();
+      
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
+         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
+      
+      sliding_window_unrolled_8x<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
+         d_window_sums.data(), 
+         d_samples.data(),
+         window_size,
+         num_windowed_samples 
+      );
+
+      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
+         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
+
+      try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
+      
+      Duration_ms duration_ms = Steady_Clock::now() - start;
+      gpu_milliseconds = duration_ms.count();
+
+      float samples_per_second = (num_samples*1000.f)/gpu_milliseconds;
+      std::cout << prefix << "It took the GPU " << gpu_milliseconds 
+         << " milliseconds to process " << num_samples 
+         << " samples\n";
+      std::cout << prefix << "That's a rate of " << samples_per_second/1e6 << " Msamples processed per second\n"; 
+
+   } catch( std::exception& ex ) {
+      throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
+   }
+} // end of 
+
 
 void SlidingWindowGPU::run() {
    try {
@@ -399,6 +442,9 @@ void SlidingWindowGPU::run() {
 
       run_unrolled_4x( "Unrolled 4x: " );
       check_results( "Unrolled 4x: " );
+
+      run_unrolled_8x( "Unrolled 8x: " );
+      check_results( "Unrolled 8x: " );
 
    } catch( std::exception& ex ) {
       std::cout << __func__ << "(): " << ex.what() << "\n"; 
