@@ -4,7 +4,7 @@
 
 #include <cufft.h>
 
-typedef enum mode_select_e { Sinusoidal, Random, Filebased } mode_select_t;
+typedef enum mode_select_e { Sinusoidal, Increasing, Random, Filebased } mode_select_t;
 
 const std::string default_filename = "input_samples.dat";
 constexpr int default_threads_per_block = 1024;

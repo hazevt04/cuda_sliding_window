@@ -11,7 +11,7 @@ void print_usage( char* prog_name ) {
    std::cout << "Usage: " << prog_name << ":\n";
    std::cout << "-m/--modeselect <selection> Select the mode for\n";
    std::cout << "                            test samples input. One of\n";
-   std::cout << "                               Sinusoidal, Random, or Filebased\n";
+   std::cout << "                               Sinusoidal, Increasing, Random, or Filebased\n";
    std::cout << "-t/--threadsperblock <num>  Number of threads per block (Must be power of 2)\n"; 
    std::cout << "-n/--nsamples <num>         Number of Samples (ignored for Filebased select)\n";
    std::cout << "-w/--winsize <num>          Number of Samples Per Window\n"; 

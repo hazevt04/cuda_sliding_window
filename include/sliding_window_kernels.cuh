@@ -26,14 +26,14 @@ __global__ void sliding_window_sh_mem( cufftComplex* __restrict__ window_sums,
    const int window_size, 
    const int num_windowed_samples );
 
-// Vectorized Loads Implementation
-__global__ void sliding_window_vectorized_loads( cufftComplex* __restrict__ window_sums, 
+// Unrolled 2x Implementation
+__global__ void sliding_window_unrolled_2x( cufftComplex* __restrict__ window_sums, 
    cufftComplex* const __restrict__ samples, 
    const int window_size, 
    const int num_windowed_samples );
 
-// Vectorized Loads Implementation 2
-__global__ void sliding_window_vectorized_loads2( cufftComplex* __restrict__ window_sums, 
+// Vectorized Loads Implementation
+__global__ void sliding_window_vectorized_loads( cufftComplex* __restrict__ window_sums, 
    cufftComplex* const __restrict__ samples, 
    const int window_size, 
    const int num_windowed_samples );

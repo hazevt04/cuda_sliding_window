@@ -20,7 +20,6 @@ __global__ void sliding_window_original(
          t_window_sum = cuCaddf( t_window_sum, samples[index + w_index] );
       }
 
-      /*window_sums[index] = make_cuFloatComplex( t_window_sum.x, t_window_sum.y );*/
       window_sums[index] = t_window_sum;
    }
 } // end of __global__ void sliding_window_original
@@ -60,7 +59,7 @@ __global__ void sliding_window_sh_mem( cufftComplex* __restrict__ window_sums,
 }
 
 
-__global__ void sliding_window_vectorized_loads(
+__global__ void sliding_window_unrolled_2x(
    cufftComplex* __restrict__ window_sums, 
    cufftComplex* const __restrict__ samples, 
    const int window_size, 
@@ -75,6 +74,8 @@ __global__ void sliding_window_vectorized_loads(
       float2 temp0 = samples[index];
       float2 temp1 = samples[index + 1];
 
+      // Due to overlap between consecutive windows the
+      // loop logic stays the same as the original!
       for ( int w_index = 1; w_index < window_size; ++w_index ) {
          temp0 += samples[index + w_index];
          temp1 += samples[index + w_index + 1];
@@ -84,12 +85,12 @@ __global__ void sliding_window_vectorized_loads(
       window_sums[index + 1] = temp1;
    } 
 
-} // end of __global__ void sliding_window_vectorized_loads
+} // end of __global__ void sliding_window_unrolled_2x
 
 
 // Can't work due to float4 aligment making it impossible to 
 // have consecutive windows overlap
-__global__ void sliding_window_vectorized_loads2(
+__global__ void sliding_window_vectorized_loads(
    cufftComplex* __restrict__ window_sums, 
    cufftComplex* const __restrict__ samples, 
    const int window_size, 

@@ -15,6 +15,15 @@ constexpr float PI = 3.1415926535897238463f;
 constexpr float FREQ = 1000.f;
 constexpr float AMPLITUDE = 50.f;
 
+// For increasing mode, the sample values go from {1.0,1.0} to {N-1,N-1}
+// window_sum is a 32-bit int. Therefore the max window_sum value is 
+// {2147483647.0, 2147483647.0}
+// The sum of the first N integers is (N * (N-1))/2
+// N such that (N * (N-1))/2 < 2147483647 is 65535
+// The sum of the integers from 1 to 65535 is 2147450880.
+// Therefore the max value for num_samples in Increasing mode is 65535
+constexpr int MAX_NUM_SAMPLES_INCREASING = 65535;
+
 class SlidingWindowGPU {
 public:
    SlidingWindowGPU(){}
@@ -55,6 +64,7 @@ private:
    void calc_exp_window_sums();
    void run_warmup();
    void run_original( const std::string& prefix );
+   void run_unrolled_2x( const std::string& prefix );
    void run_vectorized_loads( const std::string& prefix );
 
    pinned_vector<cufftComplex> samples;
