@@ -2,9 +2,8 @@
 
 #include <cuda_runtime.h>
 
-
-#include <vector>
 #include <iostream>
+#include <vector>
 #include <stdexcept>
 #include <exception>
 
