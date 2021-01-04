@@ -73,30 +73,24 @@ SlidingWindowGPU::SlidingWindowGPU(
       dout << __func__ << "(): Filepath is " << filepath << "\n";
 
       window_sums.reserve( adjusted_num_samples );
+      dout << __func__ << "() after window_sums.reserve()\n";
       window_sums.resize( adjusted_num_samples );
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       
-      d_window_sums.reserve( adjusted_num_samples );
-
-      dout << __func__ << "() after d_window_sums.reserve()\n";      
 
       samples.reserve( adjusted_num_samples );
       dout << __func__ << "() after samples.reserve()\n";
       samples.resize( adjusted_num_samples );
-
-      d_samples.reserve( adjusted_num_samples );
-      dout << __func__ << "() after d_samples.reserve()\n";      
-      
-      d_samples.reserve( adjusted_num_samples );
-      dout << __func__ << "() after d_samples.reserve()\n";
-      //d_samples.resize( adjusted_num_samples );
-      //dout << __func__ << "() after d_samples.resize()\n";
 
       exp_window_sums = new cufftComplex[num_samples];
       for( int index = 0; index < num_samples; ++index ) {
          exp_window_sums[index] = make_cuFloatComplex(0.f,0.f);
       }
 
+      try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_samples, samples.data(), 0 ) );
+      dout << __func__ << "() cudaHostGetDevicePointer( &d_samples,...) \n";
+      try_cuda_func_throw( cerror, cudaHostGetDevicePointer( &d_window_sums, window_sums.data(), 0 ) );
+      dout << __func__ << "() cudaHostGetDevicePointer( &d_window_sums,...) \n";
 
    } catch( std::exception& ex ) {
       throw std::runtime_error{
@@ -210,8 +204,7 @@ void SlidingWindowGPU::check_results( const std::string& prefix = "Original" ) {
       dout << __func__ << "(): " << prefix << "Window Sums Check:\n"; 
       all_close = cufftComplexes_are_close( window_sums.data(), exp_window_sums, num_samples, max_diff, "window sums: ", debug );
       if (!all_close) {
-         throw std::runtime_error{ std::string{__func__} + 
-            std::string{"(): "} + prefix + 
+         throw std::runtime_error{ prefix + 
             std::string{"Mismatch between actual window_sums from GPU and expected window_sums."} };
       }
       std::cout << prefix << "All " << num_samples << " Window Sums matched expected Window Sums. Test Passed.\n\n"; 
@@ -229,18 +222,12 @@ void SlidingWindowGPU::run_warmup() {
       
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
 
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
-         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
-
       sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums.data(), 
-         d_samples.data(),
+         d_window_sums,
+         d_samples,
          window_size,
          num_windowed_samples 
       );
-
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
-         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
 
       try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
       
@@ -259,18 +246,12 @@ void SlidingWindowGPU::run_original( const std::string& prefix = "Original: " ) 
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
-         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
-      
       sliding_window_original<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums.data(), 
-         d_samples.data(),
+         d_window_sums,
+         d_samples,
          window_size,
          num_windowed_samples 
       );
-
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
-         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
 
       try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
       
@@ -301,20 +282,15 @@ void SlidingWindowGPU::run_unrolled_2x( const std::string& prefix = "Unrolled 2x
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
-         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
-      
       sliding_window_unrolled_2x<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums.data(), 
-         d_samples.data(),
+         d_window_sums,
+         d_samples,
          window_size,
          num_windowed_samples 
       );
 
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
-         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
-
-      try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
+      try_cuda_func_throw( cerror, cudaStreamSynchronize( *(stream_ptr.get()) ) );
+      //try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
       
       Duration_ms duration_ms = Steady_Clock::now() - start;
       gpu_milliseconds = duration_ms.count();
@@ -343,18 +319,12 @@ void SlidingWindowGPU::run_unrolled_4x( const std::string& prefix = "Unrolled 4x
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
-         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
-      
       sliding_window_unrolled_4x<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums.data(), 
-         d_samples.data(),
+         d_window_sums,
+         d_samples,
          window_size,
          num_windowed_samples 
       );
-
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
-         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
 
       try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
       
@@ -385,18 +355,12 @@ void SlidingWindowGPU::run_unrolled_8x( const std::string& prefix = "Unrolled 8x
       std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
-         adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
-      
       sliding_window_unrolled_8x<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
-         d_window_sums.data(), 
-         d_samples.data(),
+         d_window_sums,
+         d_samples,
          window_size,
          num_windowed_samples 
       );
-
-      try_cuda_func_throw( cerror, cudaMemcpyAsync( window_sums.data(), d_window_sums.data(),
-         adjusted_num_sample_bytes, cudaMemcpyDeviceToHost ) );
 
       try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
       
@@ -440,11 +404,11 @@ void SlidingWindowGPU::run() {
       run_unrolled_2x( "Unrolled 2x: " );
       check_results( "Unrolled 2x: " );
 
-      run_unrolled_4x( "Unrolled 4x: " );
-      check_results( "Unrolled 4x: " );
+      //run_unrolled_4x( "Unrolled 4x: " );
+      //check_results( "Unrolled 4x: " );
 
-      run_unrolled_8x( "Unrolled 8x: " );
-      check_results( "Unrolled 8x: " );
+      //run_unrolled_8x( "Unrolled 8x: " );
+      //check_results( "Unrolled 8x: " );
 
    } catch( std::exception& ex ) {
       std::cout << __func__ << "(): " << ex.what() << "\n"; 
@@ -456,9 +420,6 @@ SlidingWindowGPU::~SlidingWindowGPU() {
    samples.clear();    
    window_sums.clear();
    
-   d_samples.clear();    
-   d_window_sums.clear();
-
    if ( exp_window_sums ) delete [] exp_window_sums;
    
    if ( stream_ptr ) cudaStreamDestroy( *(stream_ptr.get()) );

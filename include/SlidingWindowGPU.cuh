@@ -1,8 +1,7 @@
 #pragma once
 
-#include "device_allocator.hpp"
-#include "pinned_allocator.hpp"
-#include "pinned_vec_file_io_funcs.hpp"
+#include "pinned_mapped_allocator.hpp"
+#include "pinned_mapped_vec_file_io_funcs.hpp"
 
 #include "my_args.hpp"
 
@@ -69,11 +68,11 @@ private:
    void run_unrolled_4x( const std::string& prefix );
    void run_unrolled_8x( const std::string& prefix );
 
-   pinned_vector<cufftComplex> samples;
-   pinned_vector<cufftComplex> window_sums;
+   pinned_mapped_vector<cufftComplex> samples;
+   pinned_mapped_vector<cufftComplex> window_sums;
 
-   device_vector<cufftComplex> d_samples;
-   device_vector<cufftComplex> d_window_sums;
+   cufftComplex* d_samples;
+   cufftComplex* d_window_sums;
 
    cufftComplex* exp_window_sums = nullptr;
 
