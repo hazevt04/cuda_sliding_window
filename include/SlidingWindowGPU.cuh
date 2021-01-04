@@ -71,8 +71,8 @@ private:
    pinned_mapped_vector<cufftComplex> samples;
    pinned_mapped_vector<cufftComplex> window_sums;
 
-   cufftComplex* d_samples;
-   cufftComplex* d_window_sums;
+   cufftComplex* d_samples = nullptr;
+   cufftComplex* d_window_sums = nullptr;
 
    cufftComplex* exp_window_sums = nullptr;
 
