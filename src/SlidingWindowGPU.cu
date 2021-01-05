@@ -198,8 +198,21 @@ void SlidingWindowGPU::cpu_run() {
    }
 }
 
+void SlidingWindowGPU::clear_results( const std::string& prefix = "" ) {
+   try {
+      cudaError_t cerror = cudaSuccess;
+      try_cuda_func_throw( cerror, cudaMemset( d_window_sums.data(), 0, adjusted_num_sample_bytes ) );
+      dout << __func__ << "(): " << prefix << "Clearing d_window_sums, the result device_vector\n";
+      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
+      dout << __func__ << "(): " << prefix << "Clearing window_sums, the result pinned_vector\n";
+   
+   } catch( std::exception& ex ) {
+      throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
+   }
+}
 
-void SlidingWindowGPU::check_results( const std::string& prefix = "Original" ) {
+
+void SlidingWindowGPU::check_results( const std::string& prefix = "" ) {
    try {
       float max_diff = 1;
       bool all_close = false;
@@ -215,7 +228,7 @@ void SlidingWindowGPU::check_results( const std::string& prefix = "Original" ) {
             std::string{"Mismatch between actual window_sums from GPU and expected window_sums."} };
       }
       std::cout << prefix << "All " << num_samples << " Window Sums matched expected Window Sums. Test Passed.\n\n"; 
-
+      
    } catch( std::exception& ex ) {
       throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
    }
@@ -227,8 +240,6 @@ void SlidingWindowGPU::run_warmup() {
       cudaError_t cerror = cudaSuccess;
       int num_shared_bytes = 0;
       
-      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
-
       try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
          adjusted_num_sample_bytes, cudaMemcpyHostToDevice ) );
 
@@ -244,6 +255,8 @@ void SlidingWindowGPU::run_warmup() {
 
       try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
       
+      clear_results();
+
    } catch( std::exception& ex ) {
       throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
    }
@@ -256,7 +269,6 @@ void SlidingWindowGPU::run_original( const std::string& prefix = "Original: " ) 
       float gpu_milliseconds = 0.f;
       int num_shared_bytes = 0;
 
-      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
       try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
@@ -298,7 +310,6 @@ void SlidingWindowGPU::run_unrolled_2x( const std::string& prefix = "Unrolled 2x
       // adjusting number of blocks and memory bound for using half as many threads
       num_blocks = ((adjusted_num_samples/2) + ( threads_per_block - 1 ))/threads_per_block;
 
-      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
       try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
@@ -340,7 +351,6 @@ void SlidingWindowGPU::run_unrolled_4x( const std::string& prefix = "Unrolled 4x
       // adjusting number of blocks and memory bound for using half as many threads
       num_blocks = ((adjusted_num_samples/4) + ( threads_per_block - 1 ))/threads_per_block;
 
-      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
       try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
@@ -382,7 +392,6 @@ void SlidingWindowGPU::run_unrolled_8x( const std::string& prefix = "Unrolled 8x
       // adjusting number of blocks and memory bound for using half as many threads
       num_blocks = ((adjusted_num_samples/8) + ( threads_per_block - 1 ))/threads_per_block;
 
-      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
       Time_Point start = Steady_Clock::now();
       
       try_cuda_func_throw( cerror, cudaMemcpyAsync( d_samples.data(), samples.data(),
@@ -433,18 +442,23 @@ void SlidingWindowGPU::run() {
       }
 
       run_warmup();
+      clear_results();
 
       run_original( "Original: " );
       check_results( "Original: " );
+      clear_results( "Original: " );
       
       run_unrolled_2x( "Unrolled 2x: " );
       check_results( "Unrolled 2x: " );
+      clear_results( "Unrolled 2x: " );
 
       run_unrolled_4x( "Unrolled 4x: " );
       check_results( "Unrolled 4x: " );
+      clear_results( "Unrolled 4x: " );
 
       run_unrolled_8x( "Unrolled 8x: " );
       check_results( "Unrolled 8x: " );
+      clear_results( "Unrolled 8x: " );
 
    } catch( std::exception& ex ) {
       std::cout << __func__ << "(): " << ex.what() << "\n"; 

@@ -64,6 +64,7 @@ private:
    void initialize_samples();
    void calc_exp_window_sums();
    void run_warmup();
+   void clear_results( const std::string& prefix );
    void run_original( const std::string& prefix );
    void run_unrolled_2x( const std::string& prefix );
    void run_unrolled_4x( const std::string& prefix );
