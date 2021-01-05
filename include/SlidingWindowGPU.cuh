@@ -62,11 +62,13 @@ public:
 private:
    void initialize_samples();
    void calc_exp_window_sums();
+   void clear_results( const std::string& prefix );
    void run_warmup();
    void run_original( const std::string& prefix );
    void run_unrolled_2x( const std::string& prefix );
    void run_unrolled_4x( const std::string& prefix );
    void run_unrolled_8x( const std::string& prefix );
+
 
    pinned_mapped_vector<cufftComplex> samples;
    pinned_mapped_vector<cufftComplex> window_sums;

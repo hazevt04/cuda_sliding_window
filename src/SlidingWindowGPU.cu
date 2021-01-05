@@ -194,11 +194,13 @@ void SlidingWindowGPU::cpu_run() {
 }
 
 
-void SlidingWindowGPU::check_results( const std::string& prefix = "Original" ) {
-   try {
-      cudaError_t cerror = cudaSuccess;
-      try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
+void SlidingWindowGPU::clear_results( const std::string& prefix = "" ) {
+   std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
+}
 
+
+void SlidingWindowGPU::check_results( const std::string& prefix = "" ) {
+   try {
       float max_diff = 1;
       bool all_close = false;
       if ( debug ) {
@@ -213,13 +215,13 @@ void SlidingWindowGPU::check_results( const std::string& prefix = "Original" ) {
       }
       std::cout << prefix << "All " << num_samples << " Window Sums matched expected Window Sums. Test Passed.\n\n"; 
 
-      std::fill( window_sums.begin(), window_sums.end(), make_cuFloatComplex( 0.f, 0.f ) );
 
    } catch( std::exception& ex ) {
       throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
    }
 
 }
+
 
 void SlidingWindowGPU::run_warmup() {
    try {
@@ -234,6 +236,7 @@ void SlidingWindowGPU::run_warmup() {
       );
 
       try_cuda_func_throw( cerror, cudaDeviceSynchronize() );
+      clear_results();
       
    } catch( std::exception& ex ) {
       throw std::runtime_error( std::string{__func__} +  std::string{"(): "} + ex.what() ); 
@@ -283,8 +286,8 @@ void SlidingWindowGPU::run_unrolled_2x( const std::string& prefix = "Unrolled 2x
       num_blocks = (( num_samples/2 ) + ( threads_per_block - 1 ))/threads_per_block;
 
       dout << __func__ << "(): num_blocks = " << num_blocks << "\n";
+      dout << __func__ << "(): window_size = " << window_size << "\n";
       dout << __func__ << "(): num_windowed_samples = " << num_windowed_samples << "\n";
-      dout << __func__ << "(): num_windowed_samples/2 = " << num_windowed_samples/2 << "\n";
       
       Time_Point start = Steady_Clock::now();
       
@@ -403,9 +406,11 @@ void SlidingWindowGPU::run() {
 
       run_original( "Original: " );
       check_results( "Original: " );
-      
+      clear_results( "Original: " );
+
       run_unrolled_2x( "Unrolled 2x: " );
       check_results( "Unrolled 2x: " );
+      clear_results( "Unrolled 2x: " );
 
       //run_unrolled_4x( "Unrolled 4x: " );
       //check_results( "Unrolled 4x: " );
