@@ -69,33 +69,33 @@ __global__ void sliding_window_unrolled_2x(
    // stride is set to the total number of threads in the grid
    int stride = blockDim.x * gridDim.x;
    
-   if ( ( blockIdx.x == 1 ) && ( threadIdx.x == 1023 ) ) {
-      printf( "\tnum_windowed_samples is %d\n", num_windowed_samples );
-      printf( "\tblockDim.x is %d\n", blockDim.x );
-      printf( "\tgridDim.x is %d\n", gridDim.x );
-   }
+   //if ( ( blockIdx.x == 0 ) && ( threadIdx.x == 0 ) ) {
+   //   printf( "\tnum_windowed_samples is %d\n", num_windowed_samples );
+   //   printf( "\tblockDim.x is %d\n", blockDim.x );
+   //   printf( "\tgridDim.x is %d\n", gridDim.x );
+   //}
 
    for( int index = global_index; index < num_windowed_samples/2; index+=stride ) {
-      float2 temp0 = samples[index];
-      float2 temp1 = samples[index + 1];
+      float2 temp0 = samples[(index*2)];
+      float2 temp1 = samples[(index*2) + 1];
 
-      if ( ( blockIdx.x == 1 ) && ( threadIdx.x == 1023 ) ) {
-         printf( "\tIndex %d, %d: Initial values: temp0 = {%f, %f}, temp1 = {%f,%f}\n", index, index+1,temp0.x, temp0.y, temp1.x, temp1.y );
-      }
+      //if ( ( blockIdx.x == 1 ) && ( threadIdx.x == 991 ) ) {
+      //   printf( "\tIndex * 2 = %d, %d: Initial values: temp0 = {%f, %f}, temp1 = {%f,%f}\n", (index*2), ((index*2)+1), temp0.x, temp0.y, temp1.x, temp1.y );
+      //}
 
       // Due to overlap between consecutive windows the
       // loop logic stays the same as the original!
       for ( int w_index = 1; w_index < window_size; ++w_index ) {
-         temp0 += samples[index + w_index];
-         temp1 += samples[index + w_index + 1];
-         if ( ( blockIdx.x == 1 ) && ( threadIdx.x == 1023 ) ) {
-            printf( "\tIndex %d, %d: w_index = %d, index+w_index = %d, index+w_index+1 = %d, temp0 = {%f, %f}, temp1 = {%f,%f}\n", index, index+1, w_index, 
-               index+w_index, index+w_index+1,temp0.x, temp0.y, temp1.x, temp1.y );
-         }
+         temp0 += samples[(index*2) + w_index];
+         temp1 += samples[(index*2) + w_index + 1];
+         //if ( ( blockIdx.x == 1 ) && ( threadIdx.x == 991 ) ) {
+         //   printf( "\tIndex * 2 = %d, %d: w_index = %d, (index*2)+w_index = %d, (index*2)+w_index+1 = %d, temp0 = {%f, %f}, temp1 = {%f,%f}\n", (index*2), ((index*2)+1), w_index, 
+         //      ((index*2)+w_index), ((index*2)+w_index+1), temp0.x, temp0.y, temp1.x, temp1.y );
+         //}
       }
 
-      window_sums[index] = temp0;
-      window_sums[index + 1] = temp1;
+      window_sums[(index*2)] = temp0;
+      window_sums[((index*2) + 1)] = temp1;
    } 
 
 } // end of __global__ void sliding_window_unrolled_2x

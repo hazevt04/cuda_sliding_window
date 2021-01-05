@@ -279,9 +279,13 @@ void SlidingWindowGPU::run_unrolled_2x( const std::string& prefix = "Unrolled 2x
       float gpu_milliseconds = 0.f;
       int num_shared_bytes = 0;
 
-      // adjusting number of blocks and memory bound for using half as many threads
-      num_blocks = ((adjusted_num_samples/2) + ( threads_per_block - 1 ))/threads_per_block;
+      dout << __func__ << "(): num_samples = " << num_samples << "\n";
+      num_blocks = (( num_samples/2 ) + ( threads_per_block - 1 ))/threads_per_block;
 
+      dout << __func__ << "(): num_blocks = " << num_blocks << "\n";
+      dout << __func__ << "(): num_windowed_samples = " << num_windowed_samples << "\n";
+      dout << __func__ << "(): num_windowed_samples/2 = " << num_windowed_samples/2 << "\n";
+      
       Time_Point start = Steady_Clock::now();
       
       sliding_window_unrolled_2x<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
