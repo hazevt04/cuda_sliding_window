@@ -282,13 +282,8 @@ void SlidingWindowGPU::run_unrolled_2x( const std::string& prefix = "Unrolled 2x
       float gpu_milliseconds = 0.f;
       int num_shared_bytes = 0;
 
-      dout << __func__ << "(): num_samples = " << num_samples << "\n";
       num_blocks = (( num_samples/2 ) + ( threads_per_block - 1 ))/threads_per_block;
 
-      dout << __func__ << "(): num_blocks = " << num_blocks << "\n";
-      dout << __func__ << "(): window_size = " << window_size << "\n";
-      dout << __func__ << "(): num_windowed_samples = " << num_windowed_samples << "\n";
-      
       Time_Point start = Steady_Clock::now();
       
       sliding_window_unrolled_2x<<<num_blocks, threads_per_block, num_shared_bytes, *(stream_ptr.get())>>>( 
@@ -412,11 +407,13 @@ void SlidingWindowGPU::run() {
       check_results( "Unrolled 2x: " );
       clear_results( "Unrolled 2x: " );
 
-      //run_unrolled_4x( "Unrolled 4x: " );
-      //check_results( "Unrolled 4x: " );
+      run_unrolled_4x( "Unrolled 4x: " );
+      check_results( "Unrolled 4x: " );
+      clear_results( "Unrolled 4x: " );
 
-      //run_unrolled_8x( "Unrolled 8x: " );
-      //check_results( "Unrolled 8x: " );
+      run_unrolled_8x( "Unrolled 8x: " );
+      check_results( "Unrolled 8x: " );
+      clear_results( "Unrolled 8x: " );
 
    } catch( std::exception& ex ) {
       std::cout << __func__ << "(): " << ex.what() << "\n"; 

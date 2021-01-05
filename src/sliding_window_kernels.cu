@@ -69,29 +69,15 @@ __global__ void sliding_window_unrolled_2x(
    // stride is set to the total number of threads in the grid
    int stride = blockDim.x * gridDim.x;
    
-   //if ( ( blockIdx.x == 0 ) && ( threadIdx.x == 0 ) ) {
-   //   printf( "\tnum_windowed_samples is %d\n", num_windowed_samples );
-   //   printf( "\tblockDim.x is %d\n", blockDim.x );
-   //   printf( "\tgridDim.x is %d\n", gridDim.x );
-   //}
-
    for( int index = global_index; index < num_windowed_samples/2; index+=stride ) {
       float2 temp0 = samples[(index*2)];
       float2 temp1 = samples[(index*2) + 1];
-
-      //if ( ( blockIdx.x == 1 ) && ( threadIdx.x == 991 ) ) {
-      //   printf( "\tIndex * 2 = %d, %d: Initial values: temp0 = {%f, %f}, temp1 = {%f,%f}\n", (index*2), ((index*2)+1), temp0.x, temp0.y, temp1.x, temp1.y );
-      //}
 
       // Due to overlap between consecutive windows the
       // loop logic stays the same as the original!
       for ( int w_index = 1; w_index < window_size; ++w_index ) {
          temp0 += samples[(index*2) + w_index];
          temp1 += samples[(index*2) + w_index + 1];
-         //if ( ( blockIdx.x == 1 ) && ( threadIdx.x == 991 ) ) {
-         //   printf( "\tIndex * 2 = %d, %d: w_index = %d, (index*2)+w_index = %d, (index*2)+w_index+1 = %d, temp0 = {%f, %f}, temp1 = {%f,%f}\n", (index*2), ((index*2)+1), w_index, 
-         //      ((index*2)+w_index), ((index*2)+w_index+1), temp0.x, temp0.y, temp1.x, temp1.y );
-         //}
       }
 
       window_sums[(index*2)] = temp0;
@@ -99,6 +85,7 @@ __global__ void sliding_window_unrolled_2x(
    } 
 
 } // end of __global__ void sliding_window_unrolled_2x
+
 
 __global__ void sliding_window_unrolled_4x(
    cufftComplex* __restrict__ window_sums, 
@@ -112,24 +99,24 @@ __global__ void sliding_window_unrolled_4x(
    int stride = blockDim.x * gridDim.x;
    
    for( int index = global_index; index < num_windowed_samples/4; index+=stride ) {
-      float2 temp0 = samples[index];
-      float2 temp1 = samples[index + 1];
-      float2 temp2 = samples[index + 2];
-      float2 temp3 = samples[index + 3];
+      float2 temp0 = samples[(index*4)];
+      float2 temp1 = samples[(index*4) + 1];
+      float2 temp2 = samples[(index*4) + 2];
+      float2 temp3 = samples[(index*4) + 3];
 
       // Due to overlap between consecutive windows the
       // loop logic stays the same as the original!
       for ( int w_index = 1; w_index < window_size; ++w_index ) {
-         temp0 += samples[index + w_index];
-         temp1 += samples[index + w_index + 1];
-         temp2 += samples[index + w_index + 2];
-         temp3 += samples[index + w_index + 3];
+         temp0 += samples[(index*4) + w_index];
+         temp1 += samples[(index*4) + w_index + 1];
+         temp2 += samples[(index*4) + w_index + 2];
+         temp3 += samples[(index*4) + w_index + 3];
       }
 
-      window_sums[index] = temp0;
-      window_sums[index + 1] = temp1;
-      window_sums[index + 2] = temp2;
-      window_sums[index + 3] = temp3;
+      window_sums[(index*4)] = temp0;
+      window_sums[(index*4) + 1] = temp1;
+      window_sums[(index*4) + 2] = temp2;
+      window_sums[(index*4) + 3] = temp3;
    } 
 
 } // end of __global__ void sliding_window_unrolled_4x
@@ -147,36 +134,36 @@ __global__ void sliding_window_unrolled_8x(
    int stride = blockDim.x * gridDim.x;
    
    for( int index = global_index; index < num_windowed_samples/8; index+=stride ) {
-      float2 temp0 = samples[index];
-      float2 temp1 = samples[index + 1];
-      float2 temp2 = samples[index + 2];
-      float2 temp3 = samples[index + 3];
-      float2 temp4 = samples[index + 4];
-      float2 temp5 = samples[index + 5];
-      float2 temp6 = samples[index + 6];
-      float2 temp7 = samples[index + 7];
+      float2 temp0 = samples[(index*8)];
+      float2 temp1 = samples[(index*8) + 1];
+      float2 temp2 = samples[(index*8) + 2];
+      float2 temp3 = samples[(index*8) + 3];
+      float2 temp4 = samples[(index*8) + 4];
+      float2 temp5 = samples[(index*8) + 5];
+      float2 temp6 = samples[(index*8) + 6];
+      float2 temp7 = samples[(index*8) + 7];
 
       // Due to overlap between consecutive windows the
       // loop logic stays the same as the original!
       for ( int w_index = 1; w_index < window_size; ++w_index ) {
-         temp0 += samples[index + w_index];
-         temp1 += samples[index + w_index + 1];
-         temp2 += samples[index + w_index + 2];
-         temp3 += samples[index + w_index + 3];
-         temp4 += samples[index + w_index + 4];
-         temp5 += samples[index + w_index + 5];
-         temp6 += samples[index + w_index + 6];
-         temp7 += samples[index + w_index + 7];
+         temp0 += samples[(index*8) + w_index];
+         temp1 += samples[(index*8) + w_index + 1];
+         temp2 += samples[(index*8) + w_index + 2];
+         temp3 += samples[(index*8) + w_index + 3];
+         temp4 += samples[(index*8) + w_index + 4];
+         temp5 += samples[(index*8) + w_index + 5];
+         temp6 += samples[(index*8) + w_index + 6];
+         temp7 += samples[(index*8) + w_index + 7];
       }
 
-      window_sums[index] = temp0;
-      window_sums[index + 1] = temp1;
-      window_sums[index + 2] = temp2;
-      window_sums[index + 3] = temp3;
-      window_sums[index + 4] = temp4;
-      window_sums[index + 5] = temp5;
-      window_sums[index + 6] = temp6;
-      window_sums[index + 7] = temp7;
+      window_sums[(index*8)] = temp0;
+      window_sums[(index*8) + 1] = temp1;
+      window_sums[(index*8) + 2] = temp2;
+      window_sums[(index*8) + 3] = temp3;
+      window_sums[(index*8) + 4] = temp4;
+      window_sums[(index*8) + 5] = temp5;
+      window_sums[(index*8) + 6] = temp6;
+      window_sums[(index*8) + 7] = temp7;
    } 
 
 } // end of __global__ void sliding_window_unrolled_8x
