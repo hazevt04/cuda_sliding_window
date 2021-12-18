@@ -1,5 +1,7 @@
 cmake_minimum_required( VERSION 3.8 )
 
+# Foo
+
 project( cuda_sliding_window LANGUAGES CXX CUDA )
 
 list(APPEND CUDA_NVCC_FLAGS "--ptxas-options=-v")
